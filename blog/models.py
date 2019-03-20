@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
+import markdown
+from django.utils.html import strip_tags
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -33,12 +36,12 @@ class Post(models.Model):
     modified_time = models.DateTimeField()
 
     excerpt = models.CharField(max_length=200, blank=True)
-
     #  ForeignKey、ManyToManyField
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     tags = models.ManyToManyField(Tag, blank=True)
 
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    views = models.PositiveIntegerField(default=0)
 
     '''
         在django2.0后，定义外键和一对一关系的时候需要加on_delete选项，此参数为了避免两个表里的数据不一致问题，不然会报错：
@@ -61,5 +64,23 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         return reverse('blog:detail', kwargs={'pk': self.pk})
+
     class Meta:
         ordering = ['-create_time']
+    # 阅读量自加1
+
+    def increase_views(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
+    # 自动获取摘要 正文前54字符
+    def save(self, *args, **kwargs):
+        # 没有摘要
+        if not self.excerpt:
+            md = markdown.Markdown(extensions=[
+                'markdown.extensions.extra',
+                'markdown.extensions.codehilite',
+            ])
+
+            self.excerpt = strip_tags(md.convert(self.body))[:54]
+        super(Post, self).save(*args, **kwargs)

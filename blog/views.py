@@ -3,7 +3,14 @@ from django.http import HttpResponse
 from .models import Post, Category
 from comments.form import CommentForm
 import markdown
+from django.views.generic import ListView
 # Create your views here.
+
+
+class IndexView(ListView):
+    model = Post
+    template_name = "index.html"
+    context_object_name = 'post_list'
 
 
 def index(request):
@@ -15,6 +22,10 @@ def index(request):
 
 def detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+
+    # 阅读量+1
+    post.increase_views()
+
     post.body = markdown.markdown(post.body,
                                   extensions=[
                                       'markdown.extensions.extra',
@@ -37,7 +48,23 @@ def archives(request, year, month):
     return render(request, 'index.html', context={'post_list': post_list})
 
 
+class ArchivesView(IndexView):
+    def get_queryset(self):
+        return super(ArchivesView, self).get_queryset().filter(create_time__month=self.kwargs.get('month'),
+                                                               create_time__year=self.kwargs.get('year'))
+
+
 def category(request, pk):
     cate = get_object_or_404(Category, pk=pk)
     post_list = Post.objects.filter(category=cate)
     return render(request, 'index.html', context={'post_list': post_list})
+
+
+class CategoryView(IndexView):
+    # model = Post
+    # template_name = 'index.html'
+    # context_object_name = 'post_list'
+
+    def get_queryset(self):
+        cate = get_object_or_404(Category, pk=self.kwargs.get('pk'))
+        return super(CategoryView, self).get_queryset().filter(category=cate)
