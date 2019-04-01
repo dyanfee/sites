@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
-from .models import Post, Category
+from .models import Post, Category,Tag
 from comments.form import CommentForm
 import markdown
 from django.views.generic import ListView, DetailView

@@ -27,8 +27,15 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+class PostManager(models.Manager):
+    def get_queryset(self):
+        
 
 class Post(models.Model):
+
+    # 自定义模型管理器 objects 就不存在了 可以有多个管理器
+    objects = models.Manager()
+    # postmgr = models.Manager() 
     title = models.CharField(max_length=70)
     body = models.TextField()
 
